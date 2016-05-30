@@ -175,7 +175,6 @@
           });
           additional_fields.before(import_button);
         activateFields(entity.find('.field'), bundle, context);
-      $('.field-name-field-edoweb-datastream').insertBefore('.field-name-field-edoweb-title');
       });
 
       function saveEntity(e) {
@@ -363,33 +362,37 @@
             target.append(select);
           }
         );
+        
       }
-
-      function getSortedByWeight(obj) {
-    	    var keys = []; 
-    	    for(var key in obj['widget']['weight']) {
-    	    	keys.push(key);
-    	    }
-    	    return keys.sort(function(a,b){return obj[a]-obj[b]});
-      }
-      
       function activateFields(fields, bundle, context) {
-    	  console.log("Field");
+    	 console.log("Field");
      	 console.log(fields);
-        $.each(fields, function() {
-        	
-          var field = $(this);
-          var field_name = getFieldName(field);
-          if (!field_name) return true;
-          if (!Drupal.settings.edoweb.fields[bundle].hasOwnProperty(field_name)) return true;
-
-          var instance = Drupal.settings.edoweb.fields[bundle][field_name]['instance'];
-          console.log(instance['label']+" is of type "+instance['widget']['type']+" with weight "+instance['widget']['weight']);
+     	 
+       var sortedFields = [];
+       $.each(fields, function() {
+    	     var field = $(this);
+     		 var field_name = getFieldName(field);
+             if (!field_name) return true;
+             if (!Drupal.settings.edoweb.fields[bundle].hasOwnProperty(field_name)) return true;
+             var instance = Drupal.settings.edoweb.fields[bundle][field_name]['instance'];
+             
+             var fieldAndInstance = {'field':field,'instance':instance,'fieldName':field_name};
+             
+             sortedFields.push(fieldAndInstance);
+     	 });
+       sortedFields.sort(
+    		   function(a,b){
+    				  return a['instance']['widget']['weight']-b['instance']['widget']['weight']
+    				  }
+    			  );	 
+       $.each(sortedFields, function(index,value) { 
+    	  var instance = value['instance'];
+    	  var field = value['field'];
+    	  var field_name =value['fieldName'];
+    	  console.log(instance['label']+" is of type "+instance['widget']['type']+" with weight "+instance['widget']['weight']);
           console.log(instance);
-         
           switch (instance['widget']['type']) {
-            case 'text_textarea':
-            	
+            case 'text_textarea':            	
             case 'text_textfield':
               if ('file' == bundle && 'field_edoweb_title' == field_name) {
                 var struct_parent = $(context)
@@ -407,7 +410,6 @@
                     }).css('float', 'right').css('margin-right', '0.3em');
                   field.find('.field-label').append(copy_button);
                 }
-
               }
             case 'number':
               field.find('.field-items').each(function() {
@@ -442,7 +444,7 @@
               });
               break;
             case 'edoweb_autocomplete_widget':
-              createDisabledTextInput(instance, $(this));
+              createDisabledTextInput(instance, field);
               field.find('.field-items').each(function() {
                 if (! instance['settings']['read_only']
                     && instance['settings']['metadata_type'] == 'descriptive'
