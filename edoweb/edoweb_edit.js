@@ -79,6 +79,8 @@
         var bundle = $(this).attr('data-entity-bundle');
         var entity = $(this);
         entity.css('margin-bottom', '2em');
+        
+        
         additional_fields.change(function() {
           var instance = Drupal.settings.edoweb.fields[bundle][$(this).val()].instance;
           var field = createField(instance);
@@ -89,8 +91,19 @@
             $(this).remove();
           }
         });
+        
+        var sortedFields = [];
         $.each(Drupal.settings.edoweb.fields[bundle], function(index, value) {
-          var instance = value['instance'];
+        	var instance = value['instance'];
+        	sortedFields.push(instance);
+        });
+        sortedFields.sort(
+ 		   function(a,b){
+ 				  return a['widget']['weight']-b['widget']['weight']
+ 				  }
+ 			  );	 
+        
+        $.each(sortedFields, function(index, instance) {
           var field_class = getFieldClassName(instance);
           var existing_items = entity.find('.' + field_class);
           if (! existing_items.length && (instance['required'] || instance['settings']['default'])) {
@@ -104,6 +117,9 @@
             additional_fields.append(option);
           }
         });
+        
+        
+        
         if (additional_fields.find('option').length > 1) {
           entity.before(additional_fields);
         }
@@ -123,7 +139,7 @@
               Drupal.attachBehaviors(entity_content);
               activateFields(entity_content.find('.field'), bundle, context);
               entity.find('.content').replaceWith(entity_content);
-             $('#page-title', context).text(page_title);
+              $('#page-title', context).text(page_title);
             };
           });
           $.get(Drupal.settings.basePath + 'edoweb/templates/' + bundle,
@@ -374,10 +390,8 @@
      		 var field_name = getFieldName(field);
              if (!field_name) return true;
              if (!Drupal.settings.edoweb.fields[bundle].hasOwnProperty(field_name)) return true;
-             var instance = Drupal.settings.edoweb.fields[bundle][field_name]['instance'];
-             
-             var fieldAndInstance = {'field':field,'instance':instance,'fieldName':field_name};
-             
+             var instance = Drupal.settings.edoweb.fields[bundle][field_name]['instance'];             
+             var fieldAndInstance = {'field':field,'instance':instance,'fieldName':field_name};            
              sortedFields.push(fieldAndInstance);
      	 });
        sortedFields.sort(
@@ -392,25 +406,11 @@
     	  console.log(instance['label']+" is of type "+instance['widget']['type']+" with weight "+instance['widget']['weight']);
           console.log(instance);
           switch (instance['widget']['type']) {
-            case 'text_textarea':            	
+            case 'text_textarea': 
+            	
             case 'text_textfield':
-              if ('file' == bundle && 'field_edoweb_title' == field_name) {
-                var struct_parent = $(context)
-                  .find('.field-name-field-edoweb-struct-parent>.field-items>.field-item>a')
-                  .attr('resource');
-                if (struct_parent) {
-                  var copy_button = $('<a href="#" title="Titelübernahme vom Parent"><span class="octicon octicon-repo-pull" /></a>')
-                    .bind('click', function() {
-                      $.get(Drupal.settings.basePath + 'edoweb_entity_label/edoweb_basic/' + struct_parent).onload = function() {
-                        if (this.status == 200) {
-                          field.find('.field-item').text(this.responseText);
-                        }
-                      };
-                      return false;
-                    }).css('float', 'right').css('margin-right', '0.3em');
-                  field.find('.field-label').append(copy_button);
-                }
-              }
+          
+              
             case 'number':
               field.find('.field-items').each(function() {
                 if ($(this).find('.field-item').length && ! instance['settings']['read_only']) {
